@@ -1,7 +1,7 @@
 # docker-regapi
 Simple bash script for performing basic API calls to Docker Private Registry v2 
 
-The purpose is to provide some basic visibility to the contents of your v2 Private Registry (in lieue of a web Frontend/UI that supports v2 API with token auth service).
+The purpose is to provide some basic visibility to the contents of your v2 Private Registry (in lieu of a web Frontend/UI that supports v2 API with token auth service).
 
 For reference, I am using to query a [v2.1 Docker Registry](https://docs.docker.com/registry/) which is using [Cesanta docker_auth](https://github.com/cesanta/docker_auth) token-based authentication server.
 
