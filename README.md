@@ -5,7 +5,7 @@ The purpose is to provide some basic visibility to the contents of your v2 Priva
 
 For reference, I am using to query a [v2.1 Docker Registry](https://docs.docker.com/registry/) which is using [Cesanta docker_auth](https://github.com/cesanta/docker_auth) token-based authentication server.
 
-_Credit: Some of the core functionality of this script (auth service header inspection, subsequent token generation) was directly inspired by a test script posted by [Konrad Kleine](https://github.com/kwk) in an [issue](https://github.com/docker/distribution/issues/1092) on the the docker github. Thanks kwk! :)
+_Credit: Some of the core functionality of this script (auth service header inspection, subsequent token generation) was directly inspired by a test script posted by [Konrad Kleine](https://github.com/kwk) in an [issue](https://github.com/docker/distribution/issues/1092) on the the docker github. Thanks kwk! :) _
 
 ### Usage:
 
