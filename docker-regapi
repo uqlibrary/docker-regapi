@@ -1,0 +1,115 @@
+#!/bin/bash
+
+function usage() {
+    set -e
+    cat <<EOM
+    ##### docker-regapi #####
+    Script for interacting with the v2 API of a Docker Private Registry
+
+    Required arguments:
+        -r | --registry         private docker registry (Format: -r [domain][:port])
+                                (can be preset with ENV "DOCKER_REGISTRY_HOST")
+
+    Optional arguments:
+        -p | --pass-token       password token to use with auth service (overrides ~/.docker/config.json)
+        -v | --verbose          verbose output
+
+    Commands:
+        -c | --catalog          Request the Catalog (list of all images).
+        -t | --tags             Get list of tags for provided image name. (Format: -t [image])
+
+    Examples:
+      Simple (Using ENV for registry and config.json for docker auth password token):
+        docker-regapi -c
+        docker-regapi -r registry.mydomain.com:5000 -c
+        docker-regapi -r registry.mydomain.com:5000 -t repo/myimage
+      All options:
+        docker-regapi -r registry.mydomain.com:5000 -p "aBcDeFgH123456" -t "repo/myimage"
+
+EOM
+
+    exit 2
+}
+
+if [ $# == 0 ]; then usage; fi
+
+# Setup default values for variables
+PASSTOKEN=false
+IMAGE=false
+VERBOSE=false
+COMMAND=false
+
+# DOCKER_REGISTRY_HOST can be set as environment variables
+if [ -z ${DOCKER_REGISTRY_HOST+x} ]; then DOCKER_REGISTRY_HOST=false; fi
+
+# Loop through arguments, two at a time for key and value
+while [[ $# > 0 ]]
+do
+    key="$1"
+
+    case $key in
+        -r|--registry)
+            DOCKER_REGISTRY_HOST="$2"
+            shift # past argument
+            ;;
+        -p|--pass-token)
+            PASSTOKEN="$2"
+            shift # past argument
+            ;;
+        -c|--catalog)
+            shift
+            COMMAND="v2/_catalog"
+            SCOPE="registry:catalog:*"
+            ;;
+        -t|--tags)
+            IMAGE="$2"
+            shift # past argument
+            COMMAND="v2/${IMAGE}/tags/list"
+            SCOPE="repository:${IMAGE}:pull"
+            ;;
+        -v|--verbose)
+            VERBOSE=true
+            ;;
+        *)
+            usage
+            exit 2
+        ;;
+    esac
+    shift # past argument or value
+done
+
+if [ $VERBOSE == true ]; then
+    set -x
+fi
+
+# Setup Registry host and password token and test for mising vars
+if [[ $DOCKER_REGISTRY_HOST == false ]] || [[ -z $DOCKER_REGISTRY_HOST ]] ; then echo "No Registry provided!" && exit 1; fi
+if [[ $PASSTOKEN == false ]] ; then
+    PASSTOKEN="$(cat ~/.docker/config.json | jq -r '.auths."'${DOCKER_REGISTRY_HOST}'".auth')"
+    if [[ $PASSTOKEN == "null" ]] || [[ -z $PASSTOKEN ]] ; then echo "No Docker Password Token provided!" && exit 1; fi
+fi
+if [[ $COMMAND == false ]] || [[ -z $COMMAND ]] ; then echo "No Command provided!" && echo && usage && exit 1; fi
+
+# Craft the Registry v2 API Call
+REG_API_URL=https://${DOCKER_REGISTRY_HOST}/${COMMAND}
+
+# Make a dummy query attempt to determine necessary Auth Service details and Scope for Token creation
+API_AUTH_HDR=$(curl -I -s ${REG_API_URL} |grep "Www-Authenticate")
+AUTH_REALM=$(echo ${API_AUTH_HDR} | grep -o '\(realm\)="[^"]*"' | cut -d '"' -f 2)
+AUTH_SERVICE=$(echo ${API_AUTH_HDR} | grep -o '\(service\)="[^"]*"' | cut -d '"' -f 2)
+AUTH_SCOPE=$(echo ${API_AUTH_HDR} | grep -o '\(scope\)="[^"]*"' | cut -d '"' -f 2)
+
+# Use Auth Service to get valid Token
+AUTH_REQUEST="${AUTH_REALM}?service=${AUTH_SERVICE}&scope=${AUTH_SCOPE}"
+#echo AUTH_REQUEST = ${AUTH_REQUEST}
+AUTH_REPONSE=$(curl -ks -H "Authorization: Basic ${PASSTOKEN}" "${AUTH_REQUEST}")
+#echo AUTH_REPONSE = ${AUTH_REPONSE}
+
+# Get the bare token from the JSON string: {"token": "...."}
+API_TOKEN=$(echo ${AUTH_REPONSE} | jq .token | tr -d '"')
+
+# Query the registry again, but this time with a bearer token
+RESULTS=$(curl -ks -H "Authorization: Bearer ${API_TOKEN}" ${REG_API_URL})
+
+# Print results
+echo ${RESULTS} | jq .
