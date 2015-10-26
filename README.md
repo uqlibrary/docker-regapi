@@ -7,6 +7,10 @@ For reference, I am using to query a [v2.1 Docker Registry](https://docs.docker.
 
 _Credit:_ Some of the core functionality of this script (auth service header inspection, subsequent token generation) was directly inspired by a test script posted by [Konrad Kleine](https://github.com/kwk) in an [issue](https://github.com/docker/distribution/issues/1092) on the the docker github. Thanks kwk! :)
 
+### Dependancies:
+- docker
+- jq (json processor, [download](https://stedolan.github.io/jq/download/) )
+
 ### Usage:
 
     Required arguments:
