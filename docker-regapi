@@ -31,7 +31,11 @@ EOM
     exit 2
 }
 
+# Check for args
 if [ $# == 0 ]; then usage; fi
+
+# Check that jq is installed
+if ! [[ `which jq 2> /dev/null` ]] ; then echo "Cannot find jq!" && exit 1; fi
 
 # Setup default values for variables
 PASSTOKEN=false
@@ -40,7 +44,7 @@ VERBOSE=false
 COMMAND=false
 
 # DOCKER_REGISTRY_HOST can be set as environment variables
-if [ -z ${DOCKER_REGISTRY_HOST+x} ]; then DOCKER_REGISTRY_HOST=false; fi
+if [[ -z ${DOCKER_REGISTRY_HOST+x} ]]; then DOCKER_REGISTRY_HOST=false; fi
 
 # Loop through arguments, two at a time for key and value
 while [[ $# > 0 ]]
