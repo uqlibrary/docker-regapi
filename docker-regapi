@@ -89,7 +89,7 @@ fi
 # Setup Registry host and password token and test for mising vars
 if [[ $DOCKER_REGISTRY_HOST == false ]] || [[ -z $DOCKER_REGISTRY_HOST ]] ; then echo "No Registry provided!" && exit 1; fi
 if [[ $PASSTOKEN == false ]] ; then
-    PASSTOKEN="$(cat ~/.docker/config.json | jq -r '.auths."'${DOCKER_REGISTRY_HOST}'".auth')"
+    PASSTOKEN="$(cat ~/.docker/config.json | jq -r .auths[\"${DOCKER_REGISTRY_HOST}\"].auth)"
     if [[ $PASSTOKEN == "null" ]] || [[ -z $PASSTOKEN ]] ; then echo "No Docker Password Token provided!" && exit 1; fi
 fi
 if [[ $COMMAND == false ]] || [[ -z $COMMAND ]] ; then echo "No Command provided!" && echo && usage && exit 1; fi
